@@ -18,11 +18,11 @@ public class GhostPlugin implements EnemyPlugin {
     @Override
     public EnemyStats getStats() {
         return new EnemyStats(
-                24,                 // size
-                2,                  // hp
-                1,                  // damage
-                2.85,               // speed
-                2,                  // cost
+                24,
+                2,
+                1,
+                3.20,
+                2,
                 new Color(180, 120, 255)
         );
     }
@@ -38,7 +38,7 @@ public class GhostPlugin implements EnemyPlugin {
             @Override
             public void onUpdate(GameContext game, Enemy self) {
                 int tick = game.getTick();
-                int offset = (tick / 12) % 2 == 0 ? 28 : -28;
+                int offset = (tick / 10) % 2 == 0 ? 32 : -32;
 
                 self.moveTowards(
                         game.getPlayer().getCenterX() + offset,

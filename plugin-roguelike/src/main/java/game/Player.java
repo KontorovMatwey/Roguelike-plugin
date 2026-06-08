@@ -19,11 +19,11 @@ public class Player {
 
     private int damage = 1;
 
-    private final int baseAttackCooldown = 15;
+    private final int baseAttackCooldown = 17;
     private double attackCooldownMultiplier = 1.0;
     private int attackCooldown = 0;
 
-    private boolean hpRegenEnabled = false;
+    private int hpRegenStacks = 0;
     private int regenTickCounter = 0;
 
     private boolean diagonalShotsEnabled = false;
@@ -82,10 +82,10 @@ public class Player {
             invulnerabilityTicks--;
         }
 
-        if (hpRegenEnabled && hp < maxHp) {
+        if (hpRegenStacks > 0 && hp < maxHp) {
             regenTickCounter++;
             if (regenTickCounter >= 180) {
-                heal(1);
+                heal(hpRegenStacks);
                 regenTickCounter = 0;
             }
         }
@@ -176,8 +176,8 @@ public class Player {
         hp = Math.min(maxHp, hp + amount);
     }
 
-    public void enableHpRegen() {
-        hpRegenEnabled = true;
+    public void addHpRegenStack() {
+        hpRegenStacks++;
     }
 
     public void enableDiagonalShots() {

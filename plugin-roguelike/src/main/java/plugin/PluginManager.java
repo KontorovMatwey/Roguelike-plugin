@@ -1,8 +1,5 @@
 package plugin;
 
-import enemy.EnemyBehavior;
-import enemy.SimpleChaseBehavior;
-
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -55,17 +52,29 @@ public class PluginManager {
         }
 
         if (plugins.isEmpty()) {
-            System.out.println("No plugins found. Using built-in behavior.");
+            System.out.println("No plugins found.");
         }
     }
 
-    public EnemyPlugin getRandomPlugin(Random random) {
-        if (plugins.isEmpty() || random == null) {
+    public EnemyPlugin getRandomPlugin(Random random, int maxCost) {
+        if (plugins.isEmpty() || random == null || maxCost < 1) {
             return null;
         }
 
-        List<EnemyPlugin> list = new ArrayList<>(plugins.values());
-        return list.get(random.nextInt(list.size()));
+        List<EnemyPlugin> affordable = new ArrayList<>();
+
+        for (EnemyPlugin plugin : plugins.values()) {
+            EnemyStats stats = plugin.getStats();
+            if (stats != null && stats.cost() <= maxCost) {
+                affordable.add(plugin);
+            }
+        }
+
+        if (affordable.isEmpty()) {
+            return null;
+        }
+
+        return affordable.get(random.nextInt(affordable.size()));
     }
 
     public boolean hasPlugins() {

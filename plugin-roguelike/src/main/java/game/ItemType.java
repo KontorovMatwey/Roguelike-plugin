@@ -2,10 +2,10 @@ package game;
 
 public enum ItemType {
 
-    REGEN("HP regen", 1),
-    FAST_ATTACK("x0.8 attack cooldown", 1),
-    POWER_ATTACK("+1 damage, x1.2 attack cooldown", 1),
-    SMALL_FAST("x0.8 size, x1.25 speed", 1),
+    REGEN("HP regen", 3),
+    FAST_ATTACK("x0.8 attack cooldown", 3),
+    POWER_ATTACK("+1 damage, x1.2 attack cooldown", 3),
+    SMALL_FAST("x0.8 size, x1.25 speed", 3),
     DIAGONAL_SHOT("Diagonal shots, x0.8 projectile speed", 1);
 
     private final String label;
@@ -30,7 +30,7 @@ public enum ItemType {
 
     public void applyTo(Player player) {
         switch (this) {
-            case REGEN -> player.enableHpRegen();
+            case REGEN -> player.addHpRegenStack();
             case FAST_ATTACK -> player.multiplyAttackCooldown(0.8);
             case POWER_ATTACK -> {
                 player.addDamage(1);

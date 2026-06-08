@@ -3,11 +3,11 @@ game\GamePanel$1.class
 app\MainMenuPanel$1.class
 plugin\PluginManager.class
 game\GamePanel$2.class
+plugin\EnemyStats.class
 enemy\SimpleChaseBehavior.class
 game\ItemPickup.class
 enemy\Bullet.class
 app\ModEntry.class
-plugin\BasicZombiePlugin.class
 app\ModManager.class
 plugin\EnemyPlugin.class
 game\ItemType.class

@@ -3,10 +3,10 @@ package game;
 import app.ModManager;
 import enemy.Bullet;
 import enemy.Enemy;
-import enemy.ZombieBehavior;
 import plugin.EnemyPlugin;
-import plugin.PluginManager;
 import plugin.EnemyStats;
+import plugin.PluginManager;
+
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -51,8 +51,7 @@ public class GamePanel extends JPanel {
     private final Runnable onMainMenu;
 
     private int currentWave = 1;
-    private int waveCostBudget;
-    private int waveCostSpawned;
+    private int waveBudgetRemaining;
     private int spawnCooldown;
 
     private boolean waitingForPickup;
@@ -60,7 +59,6 @@ public class GamePanel extends JPanel {
     private boolean paused;
 
     private ItemPickup currentItem;
-    private ItemType lastItemType;
 
     private boolean moveUp;
     private boolean moveDown;
@@ -153,9 +151,8 @@ public class GamePanel extends JPanel {
 
     private void startWave(int wave) {
         currentWave = wave;
-        waveCostBudget = 4 + wave * 3;
-        waveCostSpawned = 0;
-        spawnCooldown = 20;
+        waveBudgetRemaining = 8 + wave * 4;
+        spawnCooldown = 16;
         waitingForPickup = false;
         currentItem = null;
 
@@ -222,7 +219,6 @@ public class GamePanel extends JPanel {
         if (currentItem != null && context.getPlayer().getBounds().intersects(currentItem.getBounds())) {
             currentItem.getType().applyTo(context.getPlayer());
             itemCounts.merge(currentItem.getType(), 1, Integer::sum);
-            lastItemType = currentItem.getType();
             currentItem = null;
             waitingForPickup = false;
 
@@ -254,67 +250,33 @@ public class GamePanel extends JPanel {
     }
 
     private void spawnEnemyIfNeeded() {
-        if (waveCostSpawned >= waveCostBudget) {
-            return;
-        }
-
         if (spawnCooldown > 0) {
             spawnCooldown--;
             return;
         }
 
-        int remaining = waveCostBudget - waveCostSpawned;
-        boolean canSpawnSpecial = remaining >= 2;
-        double specialChance = Math.min(0.35 + currentWave * 0.10, 0.80);
-        boolean spawnSpecial = canSpawnSpecial && pluginManager.hasPlugins() && random.nextDouble() < specialChance;
-
-        int[] position = randomSpawnPosition();
-
-        if (spawnSpecial) {
-            spawnSpecialEnemy(position[0], position[1]);
-            waveCostSpawned += 2;
-        } else {
-            spawnZombie(position[0], position[1]);
-            waveCostSpawned += 1;
+        if (waveBudgetRemaining <= 0) {
+            return;
         }
 
-        spawnCooldown = Math.max(8, 42 - currentWave * 6);
-    }
+        int[] position = randomCornerSpawnPoint();
+        int remainingBudget = waveBudgetRemaining;
 
-    private void spawnZombie(int x, int y) {
-        double speed = 1.55 + currentWave * 0.15;
-
-        Enemy enemy = new Enemy(
-                x,
-                y,
-                24,
-                2,
-                1,
-                speed,
-                1,
-                new Color(70, 190, 90),
-                new ZombieBehavior()
-        );
-
-        context.addEnemy(enemy);
-    }
-
-    private void spawnSpecialEnemy(int x, int y) {
-        EnemyPlugin plugin = pluginManager.getRandomPlugin(random);
+        EnemyPlugin plugin = pluginManager.getRandomPlugin(random, remainingBudget);
         if (plugin == null) {
-            spawnZombie(x, y);
+            waveBudgetRemaining = 0;
             return;
         }
 
         EnemyStats stats = plugin.getStats();
         if (stats == null) {
-            spawnZombie(x, y);
+            waveBudgetRemaining = 0;
             return;
         }
 
         Enemy enemy = new Enemy(
-                x,
-                y,
+                position[0],
+                position[1],
                 stats.size(),
                 stats.hp(),
                 stats.damage(),
@@ -325,64 +287,23 @@ public class GamePanel extends JPanel {
         );
 
         context.addEnemy(enemy);
+        waveBudgetRemaining -= stats.cost();
+
+        spawnCooldown = Math.max(6, 28 - currentWave * 3);
     }
 
-    private int[] randomSpawnPosition() {
-        List<int[]> points = new ArrayList<>();
+    private int[] randomCornerSpawnPoint() {
+        int minX = context.getMinX();
+        int minY = context.getMinY();
+        int maxX = context.getMaxX() - 24;
+        int maxY = context.getMaxY() - 24;
 
-        int roomLeft = context.getMinX();
-        int roomTop = context.getMinY();
-        int roomRight = context.getMaxX() - 24;
-        int roomBottom = context.getMaxY() - 24;
-
-        int midX = roomLeft + (roomRight - roomLeft) / 2;
-        int midY = roomTop + (roomBottom - roomTop) / 2;
-
-        points.add(new int[]{midX, roomTop});
-        points.add(new int[]{midX, roomBottom});
-        points.add(new int[]{roomLeft, midY});
-        points.add(new int[]{roomRight, midY});
-
-        if (currentWave >= 2) {
-            points.add(new int[]{roomLeft, roomTop});
-            points.add(new int[]{roomRight, roomTop});
-            points.add(new int[]{roomLeft, roomBottom});
-            points.add(new int[]{roomRight, roomBottom});
-        }
-
-        if (currentWave >= 3) {
-            int quarterX = roomLeft + (roomRight - roomLeft) / 4;
-            int threeQuarterX = roomLeft + (roomRight - roomLeft) * 3 / 4;
-            int quarterY = roomTop + (roomBottom - roomTop) / 4;
-            int threeQuarterY = roomTop + (roomBottom - roomTop) * 3 / 4;
-
-            points.add(new int[]{quarterX, roomTop});
-            points.add(new int[]{threeQuarterX, roomTop});
-            points.add(new int[]{quarterX, roomBottom});
-            points.add(new int[]{threeQuarterX, roomBottom});
-            points.add(new int[]{roomLeft, quarterY});
-            points.add(new int[]{roomLeft, threeQuarterY});
-            points.add(new int[]{roomRight, quarterY});
-            points.add(new int[]{roomRight, threeQuarterY});
-        }
-
-        if (currentWave >= 4) {
-            int innerLeft = roomLeft + (roomRight - roomLeft) / 3;
-            int innerRight = roomLeft + (roomRight - roomLeft) * 2 / 3;
-            int innerTop = roomTop + (roomBottom - roomTop) / 3;
-            int innerBottom = roomTop + (roomBottom - roomTop) * 2 / 3;
-
-            points.add(new int[]{innerLeft, roomTop});
-            points.add(new int[]{innerRight, roomTop});
-            points.add(new int[]{innerLeft, roomBottom});
-            points.add(new int[]{innerRight, roomBottom});
-            points.add(new int[]{roomLeft, innerTop});
-            points.add(new int[]{roomLeft, innerBottom});
-            points.add(new int[]{roomRight, innerTop});
-            points.add(new int[]{roomRight, innerBottom});
-        }
-
-        return points.get(random.nextInt(points.size()));
+        return switch (random.nextInt(4)) {
+            case 0 -> new int[]{minX, minY};
+            case 1 -> new int[]{maxX, minY};
+            case 2 -> new int[]{minX, maxY};
+            default -> new int[]{maxX, maxY};
+        };
     }
 
     private void handleCollisions() {
@@ -433,10 +354,12 @@ public class GamePanel extends JPanel {
             return;
         }
 
-        if (waveCostSpawned >= waveCostBudget && context.getEnemies().isEmpty()) {
-            waitingForPickup = true;
-            ItemType itemType = randomAvailableItem();
+        boolean noMoreSpawns = waveBudgetRemaining <= 0;
 
+        if (noMoreSpawns && context.getEnemies().isEmpty()) {
+            waitingForPickup = true;
+
+            ItemType itemType = randomAvailableItem();
             if (itemType == null) {
                 if (currentWave >= MAX_WAVES) {
                     gameWon = true;
@@ -467,19 +390,6 @@ public class GamePanel extends JPanel {
 
         if (available.isEmpty()) {
             return null;
-        }
-
-        if (lastItemType != null && available.size() > 1) {
-            available.remove(lastItemType);
-            if (available.isEmpty()) {
-                available = new ArrayList<>();
-                for (ItemType type : ItemType.values()) {
-                    int owned = itemCounts.getOrDefault(type, 0);
-                    if (type.canDropAgain(owned)) {
-                        available.add(type);
-                    }
-                }
-            }
         }
 
         return available.get(random.nextInt(available.size()));
@@ -525,9 +435,7 @@ public class GamePanel extends JPanel {
         g2.drawString("Shoot: arrows", 20, 40);
         g2.drawString("HP: " + context.getPlayer().getHp(), 20, 60);
         g2.drawString("Wave: " + currentWave + " / " + MAX_WAVES, 20, 80);
-        g2.drawString("Wave cost: " + waveCostSpawned + " / " + waveCostBudget, 20, 100);
-
-        drawItemsHud(g2);
+        g2.drawString("Wave budget left: " + waveBudgetRemaining, 20, 100);
 
         if (waitingForPickup && currentItem != null) {
             g2.drawString("Pick up the item in the center", 20, 120);
@@ -551,28 +459,6 @@ public class GamePanel extends JPanel {
         }
 
         g2.dispose();
-    }
-
-    private void drawItemsHud(Graphics2D g2) {
-        int x = 560;
-        int y = 20;
-
-        g2.setColor(Color.WHITE);
-        g2.setFont(new Font("Dialog", Font.PLAIN, 13));
-        g2.drawString("Items:", x, y);
-
-        y += 18;
-
-        for (ItemType type : ItemType.values()) {
-            int owned = itemCounts.getOrDefault(type, 0);
-            boolean available = type.canDropAgain(owned);
-
-            g2.setColor(available ? new Color(170, 255, 170) : new Color(170, 170, 170));
-            String line = type.getLabel() + "  [" + owned + "/" + type.getMaxCopies() + "]"
-                    + (available ? "  available" : "  taken");
-            g2.drawString(line, x, y);
-            y += 16;
-        }
     }
 
     private void drawOverlay(Graphics2D g2, String text) {

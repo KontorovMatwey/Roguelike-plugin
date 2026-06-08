@@ -5,12 +5,14 @@ import game.GamePanel;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.CardLayout;
+import java.awt.Dimension;
 
 public class AppFrame extends JFrame {
 
     private static final String MENU = "menu";
     private static final String MODS = "mods";
     private static final String GAME = "game";
+    private static final Dimension WINDOW_SIZE = new Dimension(800, 600);
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel root = new JPanel(cardLayout);
@@ -30,11 +32,13 @@ public class AppFrame extends JFrame {
                 this::startGame,
                 this::exitGame
         );
+        mainMenuPanel.setPreferredSize(WINDOW_SIZE);
 
         modsPanel = new ModsPanel(
                 modManager,
                 this::showMenu
         );
+        modsPanel.setPreferredSize(WINDOW_SIZE);
 
         root.add(mainMenuPanel, MENU);
         root.add(modsPanel, MODS);
@@ -42,7 +46,7 @@ public class AppFrame extends JFrame {
         setContentPane(root);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
-        setSize(800, 600);
+        pack();
         setLocationRelativeTo(null);
 
         showMenu();
