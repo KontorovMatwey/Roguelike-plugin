@@ -1,12 +1,11 @@
 package game;
 
 import enemy.Bullet;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-public class Player {
+public class Player implements GameEntity {
 
     private double x;
     private double y;
@@ -206,6 +205,7 @@ public class Player {
         y = centerY - size / 2.0;
     }
 
+    @Override
     public void render(Graphics2D g) {
         g.setColor(new Color(70, 170, 255));
         g.fillRect((int) Math.round(x), (int) Math.round(y), size, size);
@@ -214,6 +214,7 @@ public class Player {
         g.drawRect((int) Math.round(x), (int) Math.round(y), size, size);
     }
 
+    @Override
     public Rectangle getBounds() {
         return new Rectangle((int) Math.round(x), (int) Math.round(y), size, size);
     }
@@ -234,8 +235,14 @@ public class Player {
         return damage;
     }
 
+    @Override
     public boolean isAlive() {
         return hp > 0;
+    }
+
+    @Override
+    public EntityTeam getTeam() {
+        return EntityTeam.PLAYER;
     }
 
     public int getAttackCooldownTicks() {

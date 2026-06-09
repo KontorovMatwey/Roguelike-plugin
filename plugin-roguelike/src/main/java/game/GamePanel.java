@@ -1,8 +1,8 @@
 package game;
 
 import app.ModManager;
-import enemy.Bullet;
 import enemy.Enemy;
+import enemy.Bullet;
 import plugin.EnemyPlugin;
 import plugin.EnemyStats;
 import plugin.PluginManager;
@@ -41,6 +41,7 @@ public class GamePanel extends JPanel {
     private final Timer timer;
 
     private final Map<ItemType, Integer> itemCounts = new EnumMap<>(ItemType.class);
+    private final List<int[]> spawnPoints = new ArrayList<>();
 
     private final JPanel pauseOverlay = new JPanel(null);
     private final JButton resumeButton = new JButton("Продолжить");
@@ -52,6 +53,7 @@ public class GamePanel extends JPanel {
 
     private int currentWave = 1;
     private int waveBudgetRemaining;
+    private int spawnPointIndex;
     private int spawnCooldown;
 
     private boolean waitingForPickup;
@@ -83,6 +85,10 @@ public class GamePanel extends JPanel {
         context = new GameContext(WIDTH, HEIGHT, player);
 
         pluginManager.loadPlugins(modManager.getEnabledJarFiles());
+        for (EnemyPlugin plugin : pluginManager.getPlugins()) {
+            context.addListener(plugin);
+        }
+
         setupKeyBindings();
         setupPauseOverlay();
         startWave(1);
@@ -152,11 +158,36 @@ public class GamePanel extends JPanel {
     private void startWave(int wave) {
         currentWave = wave;
         waveBudgetRemaining = 8 + wave * 4;
+        spawnPointIndex = 0;
         spawnCooldown = 16;
         waitingForPickup = false;
         currentItem = null;
 
+        spawnPoints.clear();
+        buildSpawnPoints(Math.max(8, waveBudgetRemaining * 2));
+
+        context.fireWaveStart(wave);
         context.getBullets().clear();
+    }
+
+    private void buildSpawnPoints(int count) {
+        while (spawnPoints.size() < count) {
+            spawnPoints.add(randomCornerSpawnPoint());
+        }
+    }
+
+    private int[] randomCornerSpawnPoint() {
+        int minX = context.getMinX();
+        int minY = context.getMinY();
+        int maxX = context.getMaxX() - 24;
+        int maxY = context.getMaxY() - 24;
+
+        return switch (random.nextInt(4)) {
+            case 0 -> new int[]{minX, minY};
+            case 1 -> new int[]{maxX, minY};
+            case 2 -> new int[]{minX, maxY};
+            default -> new int[]{maxX, maxY};
+        };
     }
 
     private void setupKeyBindings() {
@@ -217,6 +248,7 @@ public class GamePanel extends JPanel {
         }
 
         if (currentItem != null && context.getPlayer().getBounds().intersects(currentItem.getBounds())) {
+            context.fireItemPickup(currentItem.getType());
             currentItem.getType().applyTo(context.getPlayer());
             itemCounts.merge(currentItem.getType(), 1, Integer::sum);
             currentItem = null;
@@ -259,7 +291,11 @@ public class GamePanel extends JPanel {
             return;
         }
 
-        int[] position = randomCornerSpawnPoint();
+        if (spawnPointIndex >= spawnPoints.size()) {
+            return;
+        }
+
+        int[] position = spawnPoints.get(spawnPointIndex++);
         int remainingBudget = waveBudgetRemaining;
 
         EnemyPlugin plugin = pluginManager.getRandomPlugin(random, remainingBudget);
@@ -290,20 +326,6 @@ public class GamePanel extends JPanel {
         waveBudgetRemaining -= stats.cost();
 
         spawnCooldown = Math.max(6, 28 - currentWave * 3);
-    }
-
-    private int[] randomCornerSpawnPoint() {
-        int minX = context.getMinX();
-        int minY = context.getMinY();
-        int maxX = context.getMaxX() - 24;
-        int maxY = context.getMaxY() - 24;
-
-        return switch (random.nextInt(4)) {
-            case 0 -> new int[]{minX, minY};
-            case 1 -> new int[]{maxX, minY};
-            case 2 -> new int[]{minX, maxY};
-            default -> new int[]{maxX, maxY};
-        };
     }
 
     private void handleCollisions() {
@@ -354,9 +376,10 @@ public class GamePanel extends JPanel {
             return;
         }
 
-        boolean noMoreSpawns = waveBudgetRemaining <= 0;
+        boolean noMoreSpawns = waveBudgetRemaining <= 0 || spawnPointIndex >= spawnPoints.size();
 
         if (noMoreSpawns && context.getEnemies().isEmpty()) {
+            context.fireWaveEnd(currentWave);
             waitingForPickup = true;
 
             ItemType itemType = randomAvailableItem();

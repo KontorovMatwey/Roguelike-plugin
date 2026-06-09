@@ -1,10 +1,14 @@
 package plugin;
 
+import enemy.EnemyBehavior;
+import enemy.SimpleChaseBehavior;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +22,8 @@ public class PluginManager {
 
     public void loadPlugins(Collection<File> jarFiles) {
         clear();
+
+        plugins.put("zombie", new BasicZombiePlugin());
 
         if (jarFiles == null) {
             return;
@@ -51,9 +57,11 @@ public class PluginManager {
             }
         }
 
-        if (plugins.isEmpty()) {
-            System.out.println("No plugins found.");
-        }
+        System.out.println("Built-in plugin loaded: zombie");
+    }
+
+    public Collection<EnemyPlugin> getPlugins() {
+        return Collections.unmodifiableCollection(plugins.values());
     }
 
     public EnemyPlugin getRandomPlugin(Random random, int maxCost) {

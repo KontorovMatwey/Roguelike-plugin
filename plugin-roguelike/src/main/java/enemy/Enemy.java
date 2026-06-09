@@ -1,12 +1,14 @@
 package enemy;
 
+import game.EntityTeam;
 import game.GameContext;
+import game.GameEntity;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-public class Enemy {
+public class Enemy implements GameEntity {
 
     private double x;
     private double y;
@@ -14,10 +16,12 @@ public class Enemy {
     private final int size;
     private int hp;
     private final int damage;
-    private final double speed;
+    private final double baseSpeed;
+    private double speedMultiplier = 1.0;
     private final int cost;
     private final Color color;
     private final EnemyBehavior behavior;
+    private final EntityTeam team;
 
     private boolean alive = true;
 
@@ -32,15 +36,31 @@ public class Enemy {
             Color color,
             EnemyBehavior behavior
     ) {
+        this(x, y, size, hp, damage, speed, cost, color, behavior, EntityTeam.ENEMY);
+    }
+
+    public Enemy(
+            double x,
+            double y,
+            int size,
+            int hp,
+            int damage,
+            double speed,
+            int cost,
+            Color color,
+            EnemyBehavior behavior,
+            EntityTeam team
+    ) {
         this.x = x;
         this.y = y;
         this.size = size;
         this.hp = hp;
         this.damage = damage;
-        this.speed = speed;
+        this.baseSpeed = speed;
         this.cost = cost;
         this.color = color;
         this.behavior = behavior;
+        this.team = team;
     }
 
     public void spawn(GameContext context) {
@@ -69,10 +89,15 @@ public class Enemy {
         double distance = Math.hypot(dx, dy);
 
         if (distance > 0.0001) {
+            double speed = baseSpeed * speedMultiplier;
             x += (dx / distance) * speed;
             y += (dy / distance) * speed;
             clampToRoom(context);
         }
+    }
+
+    public void multiplySpeed(double factor) {
+        speedMultiplier *= factor;
     }
 
     private void clampToRoom(GameContext context) {
@@ -110,12 +135,18 @@ public class Enemy {
                 behavior.onDeath(context, this);
             }
 
+            context.fireEnemyDeath(this);
             return true;
         }
 
         return false;
     }
 
+    public void kill() {
+        alive = false;
+    }
+
+    @Override
     public void render(Graphics2D g) {
         g.setColor(color);
         g.fillRect((int) Math.round(x), (int) Math.round(y), size, size);
@@ -124,6 +155,7 @@ public class Enemy {
         g.drawRect((int) Math.round(x), (int) Math.round(y), size, size);
     }
 
+    @Override
     public Rectangle getBounds() {
         return new Rectangle((int) Math.round(x), (int) Math.round(y), size, size);
     }
@@ -141,14 +173,20 @@ public class Enemy {
     }
 
     public double getSpeed() {
-        return speed;
+        return baseSpeed * speedMultiplier;
     }
 
     public int getCost() {
         return cost;
     }
 
+    @Override
     public boolean isAlive() {
         return alive;
+    }
+
+    @Override
+    public EntityTeam getTeam() {
+        return team;
     }
 }

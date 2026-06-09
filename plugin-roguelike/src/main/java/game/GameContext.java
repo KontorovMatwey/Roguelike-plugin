@@ -1,7 +1,7 @@
 package game;
 
-import enemy.Bullet;
 import enemy.Enemy;
+import enemy.Bullet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,7 @@ public class GameContext {
 
     private final List<Enemy> enemies = new ArrayList<>();
     private final List<Bullet> bullets = new ArrayList<>();
+    private final List<GameEventListener> listeners = new ArrayList<>();
 
     private boolean levelComplete;
     private boolean gameOver;
@@ -70,16 +71,64 @@ public class GameContext {
         return bullets;
     }
 
+    public void addListener(GameEventListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(GameEventListener listener) {
+        listeners.remove(listener);
+    }
+
+    public void fireWaveStart(int wave) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onWaveStart(this, wave);
+        }
+    }
+
+    public void fireWaveEnd(int wave) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onWaveEnd(this, wave);
+        }
+    }
+
+    public void fireEnemySpawn(Enemy enemy) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onEnemySpawn(this, enemy);
+        }
+    }
+
+    public void fireEnemyDeath(Enemy enemy) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onEnemyDeath(this, enemy);
+        }
+    }
+
+    public void fireProjectileSpawn(Bullet projectile) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onProjectileSpawn(this, projectile);
+        }
+    }
+
+    public void fireItemPickup(ItemType itemType) {
+        for (GameEventListener listener : new ArrayList<>(listeners)) {
+            listener.onItemPickup(this, itemType);
+        }
+    }
+
     public void addEnemy(Enemy enemy) {
         if (enemy != null) {
             enemies.add(enemy);
             enemy.spawn(this);
+            fireEnemySpawn(enemy);
         }
     }
 
     public void addBullet(Bullet bullet) {
         if (bullet != null) {
             bullets.add(bullet);
+            fireProjectileSpawn(bullet);
         }
     }
 
