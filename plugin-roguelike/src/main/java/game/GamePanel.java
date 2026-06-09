@@ -1,10 +1,11 @@
 package game;
 
 import app.ModManager;
-import enemy.Enemy;
 import enemy.Bullet;
+import enemy.Enemy;
 import plugin.EnemyPlugin;
 import plugin.EnemyStats;
+import plugin.ItemPlugin;
 import plugin.PluginManager;
 
 import javax.swing.AbstractAction;
@@ -24,7 +25,7 @@ import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -40,7 +41,7 @@ public class GamePanel extends JPanel {
     private final GameContext context;
     private final Timer timer;
 
-    private final Map<ItemType, Integer> itemCounts = new EnumMap<>(ItemType.class);
+    private final Map<String, Integer> itemCounts = new HashMap<>();
     private final List<int[]> spawnPoints = new ArrayList<>();
 
     private final JPanel pauseOverlay = new JPanel(null);
@@ -85,8 +86,8 @@ public class GamePanel extends JPanel {
         context = new GameContext(WIDTH, HEIGHT, player);
 
         pluginManager.loadPlugins(modManager.getEnabledJarFiles());
-        for (EnemyPlugin plugin : pluginManager.getPlugins()) {
-            context.addListener(plugin);
+        for (GameEventListener listener : pluginManager.getListeners()) {
+            context.addListener(listener);
         }
 
         setupKeyBindings();
@@ -163,10 +164,10 @@ public class GamePanel extends JPanel {
         waitingForPickup = false;
         currentItem = null;
 
-        spawnPoints.clear();
-        buildSpawnPoints(Math.max(8, waveBudgetRemaining * 2));
-
         context.fireWaveStart(wave);
+
+        spawnPoints.clear();
+        buildSpawnPoints(Math.max(8, (int) Math.round((waveBudgetRemaining * 2) * context.getSpawnPointMultiplier())));
         context.getBullets().clear();
     }
 
@@ -248,9 +249,13 @@ public class GamePanel extends JPanel {
         }
 
         if (currentItem != null && context.getPlayer().getBounds().intersects(currentItem.getBounds())) {
-            context.fireItemPickup(currentItem.getType());
-            currentItem.getType().applyTo(context.getPlayer());
-            itemCounts.merge(currentItem.getType(), 1, Integer::sum);
+            ItemPlugin itemPlugin = currentItem.getPlugin();
+            if (itemPlugin != null) {
+                context.fireItemPickup(itemPlugin);
+                itemPlugin.apply(context);
+                itemCounts.merge(itemPlugin.getItemId(), 1, Integer::sum);
+            }
+
             currentItem = null;
             waitingForPickup = false;
 
@@ -298,7 +303,7 @@ public class GamePanel extends JPanel {
         int[] position = spawnPoints.get(spawnPointIndex++);
         int remainingBudget = waveBudgetRemaining;
 
-        EnemyPlugin plugin = pluginManager.getRandomPlugin(random, remainingBudget);
+        EnemyPlugin plugin = pluginManager.getRandomEnemyPlugin(random, remainingBudget);
         if (plugin == null) {
             waveBudgetRemaining = 0;
             return;
@@ -316,7 +321,7 @@ public class GamePanel extends JPanel {
                 stats.size(),
                 stats.hp(),
                 stats.damage(),
-                stats.speed(),
+                stats.speed() * context.getEnemySpeedMultiplier(),
                 stats.cost(),
                 stats.color(),
                 plugin.createBehavior()
@@ -382,8 +387,8 @@ public class GamePanel extends JPanel {
             context.fireWaveEnd(currentWave);
             waitingForPickup = true;
 
-            ItemType itemType = randomAvailableItem();
-            if (itemType == null) {
+            ItemPlugin itemPlugin = pluginManager.getRandomItemPlugin(random, itemCounts);
+            if (itemPlugin == null) {
                 if (currentWave >= MAX_WAVES) {
                     gameWon = true;
                     return;
@@ -396,26 +401,9 @@ public class GamePanel extends JPanel {
             currentItem = new ItemPickup(
                     WIDTH / 2.0 - 16,
                     HEIGHT / 2.0 - 16,
-                    itemType
+                    itemPlugin
             );
         }
-    }
-
-    private ItemType randomAvailableItem() {
-        List<ItemType> available = new ArrayList<>();
-
-        for (ItemType type : ItemType.values()) {
-            int owned = itemCounts.getOrDefault(type, 0);
-            if (type.canDropAgain(owned)) {
-                available.add(type);
-            }
-        }
-
-        if (available.isEmpty()) {
-            return null;
-        }
-
-        return available.get(random.nextInt(available.size()));
     }
 
     @Override

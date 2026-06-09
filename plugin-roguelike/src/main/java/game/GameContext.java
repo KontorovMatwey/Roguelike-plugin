@@ -1,7 +1,8 @@
 package game;
 
-import enemy.Enemy;
 import enemy.Bullet;
+import enemy.Enemy;
+import plugin.ItemPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,9 @@ public class GameContext {
     private boolean levelComplete;
     private boolean gameOver;
     private int tick;
+
+    private double enemySpeedMultiplier = 1.0;
+    private double spawnPointMultiplier = 1.0;
 
     public GameContext(int width, int height, Player player) {
         this.width = width;
@@ -111,9 +115,9 @@ public class GameContext {
         }
     }
 
-    public void fireItemPickup(ItemType itemType) {
+    public void fireItemPickup(ItemPlugin itemPlugin) {
         for (GameEventListener listener : new ArrayList<>(listeners)) {
-            listener.onItemPickup(this, itemType);
+            listener.onItemPickup(this, itemPlugin);
         }
     }
 
@@ -130,6 +134,22 @@ public class GameContext {
             bullets.add(bullet);
             fireProjectileSpawn(bullet);
         }
+    }
+
+    public void multiplyEnemySpeed(double factor) {
+        enemySpeedMultiplier *= factor;
+    }
+
+    public void multiplySpawnPointMultiplier(double factor) {
+        spawnPointMultiplier *= factor;
+    }
+
+    public double getEnemySpeedMultiplier() {
+        return enemySpeedMultiplier;
+    }
+
+    public double getSpawnPointMultiplier() {
+        return spawnPointMultiplier;
     }
 
     public boolean isLevelComplete() {

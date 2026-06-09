@@ -89,7 +89,7 @@ public class Enemy implements GameEntity {
         double distance = Math.hypot(dx, dy);
 
         if (distance > 0.0001) {
-            double speed = baseSpeed * speedMultiplier;
+            double speed = baseSpeed * speedMultiplier * context.getEnemySpeedMultiplier();
             x += (dx / distance) * speed;
             y += (dy / distance) * speed;
             clampToRoom(context);

@@ -1,6 +1,7 @@
 package game;
 
 import enemy.Bullet;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -25,6 +26,7 @@ public class Player implements GameEntity {
     private int hpRegenStacks = 0;
     private int regenTickCounter = 0;
 
+    private boolean rearShotsEnabled = false;
     private boolean diagonalShotsEnabled = false;
     private int invulnerabilityTicks = 0;
 
@@ -107,6 +109,10 @@ public class Player implements GameEntity {
 
         spawnBullet(context, dirX, dirY, bulletSpeed, damage);
 
+        if (rearShotsEnabled) {
+            spawnBullet(context, -dirX, -dirY, bulletSpeed * 0.8, damage);
+        }
+
         if (diagonalShotsEnabled) {
             double sideBulletSpeed = bulletSpeed * 0.8;
 
@@ -175,8 +181,21 @@ public class Player implements GameEntity {
         hp = Math.min(maxHp, hp + amount);
     }
 
+    public void increaseMaxHp(int amount) {
+        if (amount <= 0) {
+            return;
+        }
+
+        maxHp += amount;
+        hp += amount;
+    }
+
     public void addHpRegenStack() {
         hpRegenStacks++;
+    }
+
+    public void enableRearShots() {
+        rearShotsEnabled = true;
     }
 
     public void enableDiagonalShots() {

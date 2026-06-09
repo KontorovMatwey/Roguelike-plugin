@@ -1,8 +1,6 @@
 package plugin;
 
-import enemy.EnemyBehavior;
-import enemy.SimpleChaseBehavior;
-
+import game.GameEventListener;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -17,13 +15,14 @@ import java.util.ServiceLoader;
 
 public class PluginManager {
 
-    private final Map<String, EnemyPlugin> plugins = new LinkedHashMap<>();
+    private final Map<String, EnemyPlugin> enemyPlugins = new LinkedHashMap<>();
+    private final Map<String, ItemPlugin> itemPlugins = new LinkedHashMap<>();
     private final List<URLClassLoader> loaders = new ArrayList<>();
 
     public void loadPlugins(Collection<File> jarFiles) {
         clear();
 
-        plugins.put("zombie", new BasicZombiePlugin());
+        registerBuiltInEnemyPlugins();
 
         if (jarFiles == null) {
             return;
@@ -42,36 +41,60 @@ public class PluginManager {
 
                 loaders.add(classLoader);
 
-                ServiceLoader<EnemyPlugin> loader = ServiceLoader.load(EnemyPlugin.class, classLoader);
-
-                for (EnemyPlugin plugin : loader) {
+                ServiceLoader<EnemyPlugin> enemyLoader = ServiceLoader.load(EnemyPlugin.class, classLoader);
+                for (EnemyPlugin plugin : enemyLoader) {
                     if (plugin == null || plugin.getEnemyId() == null || plugin.getEnemyId().isBlank()) {
                         continue;
                     }
 
-                    plugins.put(plugin.getEnemyId(), plugin);
-                    System.out.println("Loaded plugin: " + plugin.getEnemyId());
+                    enemyPlugins.put(plugin.getEnemyId(), plugin);
+                    System.out.println("Loaded enemy plugin: " + plugin.getEnemyId());
+                }
+
+                ServiceLoader<ItemPlugin> itemLoader = ServiceLoader.load(ItemPlugin.class, classLoader);
+                for (ItemPlugin plugin : itemLoader) {
+                    if (plugin == null || plugin.getItemId() == null || plugin.getItemId().isBlank()) {
+                        continue;
+                    }
+
+                    itemPlugins.put(plugin.getItemId(), plugin);
+                    System.out.println("Loaded item plugin: " + plugin.getItemId());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        System.out.println("Built-in plugin loaded: zombie");
+        System.out.println("Built-in enemy plugins loaded.");
     }
 
-    public Collection<EnemyPlugin> getPlugins() {
-        return Collections.unmodifiableCollection(plugins.values());
+    private void registerBuiltInEnemyPlugins() {
+        enemyPlugins.put("zombie", new BasicZombiePlugin());
     }
 
-    public EnemyPlugin getRandomPlugin(Random random, int maxCost) {
-        if (plugins.isEmpty() || random == null || maxCost < 1) {
+    public Collection<GameEventListener> getListeners() {
+        List<GameEventListener> listeners = new ArrayList<>();
+        listeners.addAll(enemyPlugins.values());
+        listeners.addAll(itemPlugins.values());
+        return Collections.unmodifiableList(listeners);
+    }
+
+    public Collection<EnemyPlugin> getEnemyPlugins() {
+        return Collections.unmodifiableCollection(enemyPlugins.values());
+    }
+
+    public Collection<ItemPlugin> getItemPlugins() {
+        return Collections.unmodifiableCollection(itemPlugins.values());
+    }
+
+    public EnemyPlugin getRandomEnemyPlugin(Random random, int maxCost) {
+        if (enemyPlugins.isEmpty() || random == null || maxCost < 1) {
             return null;
         }
 
         List<EnemyPlugin> affordable = new ArrayList<>();
 
-        for (EnemyPlugin plugin : plugins.values()) {
+        for (EnemyPlugin plugin : enemyPlugins.values()) {
             EnemyStats stats = plugin.getStats();
             if (stats != null && stats.cost() <= maxCost) {
                 affordable.add(plugin);
@@ -85,12 +108,35 @@ public class PluginManager {
         return affordable.get(random.nextInt(affordable.size()));
     }
 
-    public boolean hasPlugins() {
-        return !plugins.isEmpty();
+    public ItemPlugin getRandomItemPlugin(Random random, Map<String, Integer> ownedCounts) {
+        if (itemPlugins.isEmpty() || random == null) {
+            return null;
+        }
+
+        List<ItemPlugin> available = new ArrayList<>();
+
+        for (ItemPlugin plugin : itemPlugins.values()) {
+            ItemStats stats = plugin.getStats();
+            if (stats == null) {
+                continue;
+            }
+
+            int owned = ownedCounts == null ? 0 : ownedCounts.getOrDefault(plugin.getItemId(), 0);
+            if (owned < stats.maxCopies()) {
+                available.add(plugin);
+            }
+        }
+
+        if (available.isEmpty()) {
+            return null;
+        }
+
+        return available.get(random.nextInt(available.size()));
     }
 
     public void clear() {
-        plugins.clear();
+        enemyPlugins.clear();
+        itemPlugins.clear();
 
         for (URLClassLoader loader : loaders) {
             try {

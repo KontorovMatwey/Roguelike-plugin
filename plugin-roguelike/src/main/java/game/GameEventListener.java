@@ -1,7 +1,8 @@
 package game;
 
-import enemy.Enemy;
 import enemy.Bullet;
+import enemy.Enemy;
+import plugin.ItemPlugin;
 
 public interface GameEventListener {
 
@@ -20,6 +21,6 @@ public interface GameEventListener {
     default void onProjectileSpawn(GameContext context, Bullet projectile) {
     }
 
-    default void onItemPickup(GameContext context, ItemType itemType) {
+    default void onItemPickup(GameContext context, ItemPlugin itemPlugin) {
     }
 }

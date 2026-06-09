@@ -1,5 +1,6 @@
 package enemy;
 
+import game.EntityTeam;
 import game.GameContext;
 
 import java.awt.Color;
@@ -8,21 +9,29 @@ import java.awt.Rectangle;
 
 public class Bullet {
 
-    private double x;
-    private double y;
+    private final double x;
+    private final double y;
     private final double vx;
     private final double vy;
 
     private final int size = 8;
     private final int damage;
+    private final EntityTeam team;
+    private final boolean spawnedByMod;
     private boolean alive = true;
 
     public Bullet(double x, double y, double vx, double vy, int damage) {
+        this(x, y, vx, vy, damage, EntityTeam.PLAYER_PROJECTILE, false);
+    }
+
+    public Bullet(double x, double y, double vx, double vy, int damage, EntityTeam team, boolean spawnedByMod) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
         this.damage = damage;
+        this.team = team;
+        this.spawnedByMod = spawnedByMod;
     }
 
     public void update(GameContext context) {
@@ -30,13 +39,13 @@ public class Bullet {
             return;
         }
 
-        x += vx;
-        y += vy;
+        double nextX = x + vx;
+        double nextY = y + vy;
 
-        if (x < context.getMinX() - 40
-                || x > context.getMaxX() + 40
-                || y < context.getMinY() - 40
-                || y > context.getMaxY() + 40) {
+        if (nextX < context.getMinX() - 40
+                || nextX > context.getMaxX() + 40
+                || nextY < context.getMinY() - 40
+                || nextY > context.getMaxY() + 40) {
             alive = false;
         }
     }
@@ -52,6 +61,30 @@ public class Bullet {
 
     public int getDamage() {
         return damage;
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public double getVx() {
+        return vx;
+    }
+
+    public double getVy() {
+        return vy;
+    }
+
+    public EntityTeam getTeam() {
+        return team;
+    }
+
+    public boolean isSpawnedByMod() {
+        return spawnedByMod;
     }
 
     public void kill() {
