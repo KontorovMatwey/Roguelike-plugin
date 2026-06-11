@@ -25,6 +25,9 @@ public class GameContext {
     private double enemySpeedMultiplier = 1.0;
     private double spawnPointMultiplier = 1.0;
 
+    private int currentWaveBudget;
+    private int currentSpawnPointCount;
+
     public GameContext(int width, int height, Player player) {
         this.width = width;
         this.height = height;
@@ -150,6 +153,22 @@ public class GameContext {
 
     public double getSpawnPointMultiplier() {
         return spawnPointMultiplier;
+    }
+
+    public int getCurrentWaveBudget() {
+        return currentWaveBudget;
+    }
+
+    public void setCurrentWaveBudget(int currentWaveBudget) {
+        this.currentWaveBudget = Math.max(0, currentWaveBudget);
+    }
+
+    public int getCurrentSpawnPointCount() {
+        return currentSpawnPointCount;
+    }
+
+    public void setCurrentSpawnPointCount(int currentSpawnPointCount) {
+        this.currentSpawnPointCount = Math.max(0, currentSpawnPointCount);
     }
 
     public boolean isLevelComplete() {
