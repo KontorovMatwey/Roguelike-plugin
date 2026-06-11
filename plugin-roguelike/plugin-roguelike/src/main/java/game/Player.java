@@ -12,7 +12,7 @@ public class Player implements GameEntity {
     private double y;
 
     private int size = 24;
-    private double speed = 4.0;
+    private double speed = 3.0;
 
     private int maxHp = 5;
     private int hp = 5;

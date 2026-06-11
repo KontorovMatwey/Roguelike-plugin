@@ -342,19 +342,26 @@ public class GamePanel extends JPanel {
         Player player = context.getPlayer();
 
         for (Bullet bullet : context.getBullets()) {
-            if (!bullet.isAlive() || bullet.getTeam() != EntityTeam.PLAYER_PROJECTILE) {
+            if (!bullet.isAlive()) {
                 continue;
             }
 
-            for (Enemy enemy : context.getEnemies()) {
-                if (!enemy.isAlive() || enemy.getTeam() != EntityTeam.ENEMY) {
-                    continue;
-                }
+            if (bullet.getTeam() == EntityTeam.PLAYER_PROJECTILE) {
+                for (Enemy enemy : context.getEnemies()) {
+                    if (!enemy.isAlive() || enemy.getTeam() != EntityTeam.ENEMY) {
+                        continue;
+                    }
 
-                if (bullet.getBounds().intersects(enemy.getBounds())) {
-                    enemy.takeDamage(context, bullet.getDamage());
+                    if (bullet.getBounds().intersects(enemy.getBounds())) {
+                        enemy.takeDamage(context, bullet.getDamage());
+                        bullet.kill();
+                        break;
+                    }
+                }
+            } else if (bullet.getTeam() == EntityTeam.ENEMY_PROJECTILE) {
+                if (bullet.getBounds().intersects(player.getBounds())) {
+                    player.takeDamage(bullet.getDamage());
                     bullet.kill();
-                    break;
                 }
             }
         }
