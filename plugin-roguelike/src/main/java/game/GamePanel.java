@@ -158,16 +158,21 @@ public class GamePanel extends JPanel {
 
     private void startWave(int wave) {
         currentWave = wave;
-        waveBudgetRemaining = 8 + wave * 4;
+
+        int baseBudget = 8 + wave * 4;
+        context.setCurrentWaveBudget(baseBudget);
+        context.setCurrentSpawnPointCount(Math.max(8, baseBudget * 2));
+
+        context.fireWaveStart(wave);
+
+        waveBudgetRemaining = context.getCurrentWaveBudget();
         spawnPointIndex = 0;
         spawnCooldown = 16;
         waitingForPickup = false;
         currentItem = null;
 
-        context.fireWaveStart(wave);
-
         spawnPoints.clear();
-        buildSpawnPoints(Math.max(8, (int) Math.round((waveBudgetRemaining * 2) * context.getSpawnPointMultiplier())));
+        buildSpawnPoints(context.getCurrentSpawnPointCount());
         context.getBullets().clear();
     }
 
@@ -341,21 +346,28 @@ public class GamePanel extends JPanel {
                 continue;
             }
 
-            for (Enemy enemy : context.getEnemies()) {
-                if (!enemy.isAlive()) {
-                    continue;
-                }
+            if (bullet.getTeam() == EntityTeam.PLAYER_PROJECTILE) {
+                for (Enemy enemy : context.getEnemies()) {
+                    if (!enemy.isAlive() || enemy.getTeam() != EntityTeam.ENEMY) {
+                        continue;
+                    }
 
-                if (bullet.getBounds().intersects(enemy.getBounds())) {
-                    enemy.takeDamage(context, bullet.getDamage());
+                    if (bullet.getBounds().intersects(enemy.getBounds())) {
+                        enemy.takeDamage(context, bullet.getDamage());
+                        bullet.kill();
+                        break;
+                    }
+                }
+            } else if (bullet.getTeam() == EntityTeam.ENEMY_PROJECTILE) {
+                if (bullet.getBounds().intersects(player.getBounds())) {
+                    player.takeDamage(bullet.getDamage());
                     bullet.kill();
-                    break;
                 }
             }
         }
 
         for (Enemy enemy : context.getEnemies()) {
-            if (!enemy.isAlive()) {
+            if (!enemy.isAlive() || enemy.getTeam() != EntityTeam.ENEMY) {
                 continue;
             }
 
@@ -382,8 +394,10 @@ public class GamePanel extends JPanel {
         }
 
         boolean noMoreSpawns = waveBudgetRemaining <= 0 || spawnPointIndex >= spawnPoints.size();
+        boolean noRealEnemiesAlive = context.getEnemies().stream()
+                .noneMatch(enemy -> enemy.isAlive() && enemy.getTeam() == EntityTeam.ENEMY);
 
-        if (noMoreSpawns && context.getEnemies().isEmpty()) {
+        if (noMoreSpawns && noRealEnemiesAlive) {
             context.fireWaveEnd(currentWave);
             waitingForPickup = true;
 

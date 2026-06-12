@@ -1,6 +1,7 @@
 package plugin;
 
 import game.GameEventListener;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -18,11 +19,13 @@ public class PluginManager {
     private final Map<String, EnemyPlugin> enemyPlugins = new LinkedHashMap<>();
     private final Map<String, ItemPlugin> itemPlugins = new LinkedHashMap<>();
     private final List<URLClassLoader> loaders = new ArrayList<>();
+    private final TextEnemyLoader textEnemyLoader = new TextEnemyLoader();
 
     public void loadPlugins(Collection<File> jarFiles) {
         clear();
 
         registerBuiltInEnemyPlugins();
+        registerTextEnemyPlugins();
 
         if (jarFiles == null) {
             return;
@@ -70,6 +73,18 @@ public class PluginManager {
 
     private void registerBuiltInEnemyPlugins() {
         enemyPlugins.put("zombie", new BasicZombiePlugin());
+    }
+
+    private void registerTextEnemyPlugins() {
+        File dataDir = new File("mods/data-enemies");
+        for (EnemyPlugin plugin : textEnemyLoader.loadFromDirectory(dataDir)) {
+            if (plugin == null || plugin.getEnemyId() == null || plugin.getEnemyId().isBlank()) {
+                continue;
+            }
+
+            enemyPlugins.put(plugin.getEnemyId(), plugin);
+            System.out.println("Loaded text enemy: " + plugin.getEnemyId());
+        }
     }
 
     public Collection<GameEventListener> getListeners() {

@@ -21,5 +21,11 @@ D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\BasicZombiePlugin.java
 D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\EnemyPlugin.java
 D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\EnemyStats.java
 D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\ItemPlugin.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\items\DiagonalShotItemPlugin.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\items\FastAttackItemPlugin.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\items\PowerAttackItemPlugin.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\items\RegenItemPlugin.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\items\SizeSpeedItemPlugin.java
 D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\ItemStats.java
 D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\PluginManager.java
+D:\IdeaProjects\plugin-roguelike\src\main\java\plugin\TextEnemyLoader.java

@@ -9,8 +9,8 @@ import java.awt.Rectangle;
 
 public class Bullet {
 
-    private final double x;
-    private final double y;
+    private double x;
+    private double y;
     private final double vx;
     private final double vy;
 
@@ -39,13 +39,13 @@ public class Bullet {
             return;
         }
 
-        double nextX = x + vx;
-        double nextY = y + vy;
+        x += vx;
+        y += vy;
 
-        if (nextX < context.getMinX() - 40
-                || nextX > context.getMaxX() + 40
-                || nextY < context.getMinY() - 40
-                || nextY > context.getMaxY() + 40) {
+        if (x < context.getMinX() - 40
+                || x > context.getMaxX() + 40
+                || y < context.getMinY() - 40
+                || y > context.getMaxY() + 40) {
             alive = false;
         }
     }

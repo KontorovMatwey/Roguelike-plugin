@@ -7,6 +7,7 @@ import game.GameEntity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 
 public class Enemy implements GameEntity {
 
@@ -23,6 +24,7 @@ public class Enemy implements GameEntity {
     private final EnemyBehavior behavior;
     private final EntityTeam team;
 
+    private BufferedImage sprite;
     private boolean alive = true;
 
     public Enemy(
@@ -100,6 +102,10 @@ public class Enemy implements GameEntity {
         speedMultiplier *= factor;
     }
 
+    public void setSprite(BufferedImage sprite) {
+        this.sprite = sprite;
+    }
+
     private void clampToRoom(GameContext context) {
         double minX = context.getMinX();
         double minY = context.getMinY();
@@ -148,11 +154,22 @@ public class Enemy implements GameEntity {
 
     @Override
     public void render(Graphics2D g) {
-        g.setColor(color);
-        g.fillRect((int) Math.round(x), (int) Math.round(y), size, size);
+        if (sprite != null) {
+            g.drawImage(
+                    sprite,
+                    (int) Math.round(x),
+                    (int) Math.round(y),
+                    size,
+                    size,
+                    null
+            );
+        } else {
+            g.setColor(color);
+            g.fillRect((int) Math.round(x), (int) Math.round(y), size, size);
 
-        g.setColor(Color.WHITE);
-        g.drawRect((int) Math.round(x), (int) Math.round(y), size, size);
+            g.setColor(Color.WHITE);
+            g.drawRect((int) Math.round(x), (int) Math.round(y), size, size);
+        }
     }
 
     @Override
@@ -188,5 +205,9 @@ public class Enemy implements GameEntity {
     @Override
     public EntityTeam getTeam() {
         return team;
+    }
+
+    public Color getColor() {
+        return color;
     }
 }
