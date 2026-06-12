@@ -1,1 +1,5 @@
-itemmods.BackShotItemPlugin
+moditems.BackShotItemPlugin
+moditems.HealthBoostItemPlugin
+moditems.EnemySlowItemPlugin
+moditems.SpawnSlowItemPlugin
+moditems.TrapItemPlugin

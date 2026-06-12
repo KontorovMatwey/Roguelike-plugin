@@ -1,2 +1,7 @@
+moditems\EnemySlowItemPlugin.class
 org\example\Main.class
-itemmods\BackShotItemPlugin.class
+moditems\BackShotItemPlugin.class
+moditems\SpawnSlowItemPlugin.class
+moditems\HealthBoostItemPlugin.class
+moditems\TrapItemPlugin$1.class
+moditems\TrapItemPlugin.class

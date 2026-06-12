@@ -1,4 +1,4 @@
-package itemmods;
+package moditems;
 
 import enemy.Bullet;
 import game.GameContext;
